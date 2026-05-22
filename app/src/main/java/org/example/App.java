@@ -4,22 +4,33 @@
 package org.example;
 
 import io.javalin.Javalin;
+import io.javalin.config.JavalinConfig;
+import io.javalin.http.Context;
+
+import java.util.function.Consumer;
 
 public class App {
-    public String getGreeting() {
-        return "Hello World!";
-    }
 
-    //TODO adding lucene
+    //TODO i need to figure out how to get files form the POst endpoint oh how do i want to deal with this
+    //TODO i need to figure out where iam i gonna store the index for local and for the volume docker
     //TODO Createa a write vecotere Search
     //TODO Creatae a read enpoint
     public static void main(String[] args) {
-        System.out.println(new App().getGreeting());
-        var app = Javalin.create(config ->  {
-            config.routes.get(
-                    "/test" ,
-                    ctx -> ctx.result("Hello World!")
-            );
-        }).start(8080);
+
+        Consumer<JavalinConfig> config = javalinConfig -> {
+            javalinConfig.routes.post("/index", App::handleIndex);
+            javalinConfig.routes.get("/search", App::handleSearch);
+        };
+
+        Javalin.create(config).start(8080);
     }
+
+    private static void handleIndex(Context ctx) {
+        ctx.result("Hello World! INDEX");
+    }
+
+    private static void handleSearch(Context ctx) {
+        ctx.result("Hello World! SERCH");
+    }
+
 }

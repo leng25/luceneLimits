@@ -21,6 +21,7 @@ dependencies {
     implementation(libs.guava)
     implementation("io.javalin:javalin:7.2.2")
     implementation("org.slf4j:slf4j-simple:2.0.17")
+    implementation("org.apache.lucene:lucene-core:10.0.0")
 }
 
 testing {
