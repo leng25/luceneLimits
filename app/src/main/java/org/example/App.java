@@ -10,6 +10,9 @@ public class App {
         return "Hello World!";
     }
 
+    //TODO adding lucene
+    //TODO Createa a write vecotere Search
+    //TODO Creatae a read enpoint
     public static void main(String[] args) {
         System.out.println(new App().getGreeting());
         var app = Javalin.create(config ->  {
