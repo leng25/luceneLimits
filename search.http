@@ -1,8 +1,13 @@
 ### GET request to example server
 POST localhost:8080/index
+Content-Type: application/json
 
+{
+  "title" : "LUiS TITLE",
+  "content": "This si y First Book about any topic"
+}
 ###
 
-GET localhost:8080/search
+GET localhost:8080/search?q=book
 
 ###

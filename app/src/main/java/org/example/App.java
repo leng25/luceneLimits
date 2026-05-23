@@ -6,31 +6,81 @@ package org.example;
 import io.javalin.Javalin;
 import io.javalin.config.JavalinConfig;
 import io.javalin.http.Context;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.document.Document;
+import org.apache.lucene.document.Field;
+import org.apache.lucene.document.TextField;
+import org.apache.lucene.index.*;
+import org.apache.lucene.search.*;
+import org.apache.lucene.store.Directory;
+import org.apache.lucene.store.FSDirectory;
 
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Map;
 import java.util.function.Consumer;
 
 public class App {
 
-    //TODO i need to figure out how to get files form the POst endpoint oh how do i want to deal with this
     //TODO i need to figure out where iam i gonna store the index for local and for the volume docker
     //TODO Createa a write vecotere Search
     //TODO Creatae a read enpoint
-    public static void main(String[] args) {
 
+    record IndexRequest(String title, String content) {}
+    private static final String INDEX_PATH = "data/index";
+    private static IndexWriter writer;
+    private static IndexSearcher searcher;
+
+    public static void main(String[] args) throws IOException {
+        writer = createIndexWriter();
+        searcher = createSearcher();
         Consumer<JavalinConfig> config = javalinConfig -> {
             javalinConfig.routes.post("/index", App::handleIndex);
             javalinConfig.routes.get("/search", App::handleSearch);
         };
-
         Javalin.create(config).start(8080);
     }
 
-    private static void handleIndex(Context ctx) {
-        ctx.result("Hello World! INDEX");
+    private static void handleIndex(Context ctx) throws IOException {
+        var request = ctx.bodyAsClass(IndexRequest.class);
+        var doc = createDocument(request.title(), request.content());
+        writer.addDocument(doc);
+        ctx.status(201);
     }
 
-    private static void handleSearch(Context ctx) {
-        ctx.result("Hello World! SERCH");
+    private static void handleSearch(Context ctx) throws IOException {
+        String queryString = ctx.queryParam("q");
+        TermQuery query = new TermQuery(new Term("content", queryString));
+        var docs = new ArrayList<Map<String, String>>();
+        for (ScoreDoc hit: searcher.search(query, 10).scoreDocs) {
+            Document doc = searcher.storedFields().document(hit.doc);
+            docs.add(Map.of(
+                    "title", doc.get("title"),
+                    "content", doc.get("content"))
+            );
+        }
+        ctx.json(docs);
     }
 
+    private static Document createDocument(String title, String content){
+        var doc = new Document();
+        var titleField = new TextField("title", title, Field.Store.YES);
+        var contentField = new TextField("content", content, Field.Store.YES);
+        doc.add(titleField);
+        doc.add(contentField);
+        return doc;
+    }
+
+    private static IndexWriter createIndexWriter() throws IOException {
+        var analyzer = new StandardAnalyzer();
+        var config = new IndexWriterConfig(analyzer);
+        Directory directory = FSDirectory.open(Path.of(INDEX_PATH));
+        return  new IndexWriter(directory, config);
+    }
+
+    private static IndexSearcher createSearcher() throws IOException {
+        IndexReader reader = DirectoryReader.open(writer);
+        return new IndexSearcher(reader);
+    }
 }
