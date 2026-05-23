@@ -23,6 +23,7 @@ import java.util.function.Consumer;
 
 public class App {
 
+
     //TODO i need to figure out where iam i gonna store the index for local and for the volume docker
     //TODO Createa a write vecotere Search
     //TODO Creatae a read enpoint
@@ -31,10 +32,17 @@ public class App {
     private static final String INDEX_PATH = "data/index";
     private static IndexWriter writer;
     private static IndexSearcher searcher;
+    private static DirectoryReader reader;
 
     public static void main(String[] args) throws IOException {
-        writer = createIndexWriter();
-        searcher = createSearcher();
+        // initialize Lucene
+        var indexConfig = new IndexWriterConfig(new StandardAnalyzer());
+        Directory directory = FSDirectory.open(Path.of(INDEX_PATH));
+        writer = new IndexWriter(directory, indexConfig);
+        reader = DirectoryReader.open(writer);
+        searcher = new IndexSearcher(reader);
+
+        // set up Rest endpoints
         Consumer<JavalinConfig> config = javalinConfig -> {
             javalinConfig.routes.post("/index", App::handleIndex);
             javalinConfig.routes.get("/search", App::handleSearch);
@@ -46,12 +54,14 @@ public class App {
         var request = ctx.bodyAsClass(IndexRequest.class);
         var doc = createDocument(request.title(), request.content());
         writer.addDocument(doc);
+        writer.commit();
+        searcher = new IndexSearcher(DirectoryReader.openIfChanged(reader));
         ctx.status(201);
     }
 
     private static void handleSearch(Context ctx) throws IOException {
         String queryString = ctx.queryParam("q");
-        TermQuery query = new TermQuery(new Term("content", queryString));
+        Query query = new TermQuery(new Term("content", queryString));
         var docs = new ArrayList<Map<String, String>>();
         for (ScoreDoc hit: searcher.search(query, 10).scoreDocs) {
             Document doc = searcher.storedFields().document(hit.doc);
@@ -72,15 +82,4 @@ public class App {
         return doc;
     }
 
-    private static IndexWriter createIndexWriter() throws IOException {
-        var analyzer = new StandardAnalyzer();
-        var config = new IndexWriterConfig(analyzer);
-        Directory directory = FSDirectory.open(Path.of(INDEX_PATH));
-        return  new IndexWriter(directory, config);
-    }
-
-    private static IndexSearcher createSearcher() throws IOException {
-        IndexReader reader = DirectoryReader.open(writer);
-        return new IndexSearcher(reader);
-    }
 }

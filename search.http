@@ -3,11 +3,11 @@ POST localhost:8080/index
 Content-Type: application/json
 
 {
-  "title" : "LUiS TITLE",
-  "content": "This si y First Book about any topic"
+  "title" : "Harry Potter",
+  "content": "this is the first chapter of harry books"
 }
 ###
 
-GET localhost:8080/search?q=book
+GET localhost:8080/search?q=chapter
 
 ###
