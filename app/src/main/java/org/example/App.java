@@ -20,13 +20,16 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.logging.Logger;
 
 public class App {
 
 
-    //TODO i need to figure out where iam i gonna store the index for local and for the volume docker
-    //TODO Createa a write vecotere Search
-    //TODO Creatae a read enpoint
+    //TODO we need to start the Testing Framework developemt
+
+    //SideQuest
+    //TODO i need to better undesrtad how segments work
+    //TODO i need to undesrtand better how merging strategy works
 
     record IndexRequest(String title, String content) {}
     private static final String INDEX_PATH = "data/index";
@@ -37,6 +40,7 @@ public class App {
     public static void main(String[] args) throws IOException {
         // initialize Lucene
         var indexConfig = new IndexWriterConfig(new StandardAnalyzer());
+        indexConfig.setInfoStream(System.out);
         Directory directory = FSDirectory.open(Path.of(INDEX_PATH));
         writer = new IndexWriter(directory, indexConfig);
         reader = DirectoryReader.open(writer);

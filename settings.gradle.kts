@@ -13,3 +13,4 @@ plugins {
 
 rootProject.name = "luceneLimits"
 include("app")
+include("stress-tests")
